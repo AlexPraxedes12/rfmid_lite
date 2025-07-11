@@ -18,7 +18,10 @@ class RFMiDDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.img_dir, self.labels.iloc[idx, 0])
+        # Ensure image names read from the CSV are converted to strings when
+        # constructing the image path. This avoids type errors if the ID column
+        # contains numeric values.
+        img_name = os.path.join(self.img_dir, str(self.labels.iloc[idx, 0]))
         image = Image.open(img_name).convert('RGB')
         label = torch.tensor(self.labels.iloc[idx, 1:].values.astype('float32'))
         if self.transform:
