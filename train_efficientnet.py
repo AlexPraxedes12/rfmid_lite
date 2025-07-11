@@ -10,7 +10,20 @@ import torch.optim as optim
 
 class RFMiDDataset(Dataset):
     def __init__(self, csv_file, img_dir, transform=None):
+        # Load the label CSV
         self.labels = pd.read_csv(csv_file)
+
+        # Ensure we only keep the ID column plus 28 labels and fail fast if the
+        # structure is unexpected. This prevents size mismatches between the
+        # dataset and the model output layer.
+        if self.labels.shape[1] != 29:
+            raise ValueError(
+                f"Expected 29 columns (ID + 28 labels), but found {self.labels.shape[1]} in {csv_file}"
+            )
+
+        # Retain only the first 29 columns in case extra data is present
+        self.labels = self.labels.iloc[:, :29]
+
         self.img_dir = img_dir
         self.transform = transform
 
@@ -23,7 +36,10 @@ class RFMiDDataset(Dataset):
         # contains numeric values.
         img_name = os.path.join(self.img_dir, str(self.labels.iloc[idx, 0]) + ".png")
         image = Image.open(img_name).convert('RGB')
-        label = torch.tensor(self.labels.iloc[idx, 1:].values.astype('float32'))
+        # Extract exactly the 28 label values corresponding to the image
+        label = torch.tensor(
+            self.labels.iloc[idx, 1:29].values.astype('float32')
+        )
         if self.transform:
             image = self.transform(image)
         return image, label
