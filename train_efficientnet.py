@@ -10,19 +10,35 @@ import torch.optim as optim
 
 class RFMiDDataset(Dataset):
     def __init__(self, csv_file, img_dir, transform=None):
+        """Dataset that loads only the seven disease labels from the RFMiD CSV."""
+
+        # Columns that correspond to the disease labels we care about
+        self.disease_cols = [
+            "Diabetic Retinopathy",
+            "Hypertensive Retinopathy",
+            "Glaucoma",
+            "Cataract",
+            "Age-related Macular Degeneration",
+            "Retinal Detachment",
+            "Others",
+        ]
+
         # Load the label CSV
-        self.labels = pd.read_csv(csv_file)
+        df = pd.read_csv(csv_file)
 
-        # Ensure we only keep the ID column plus 28 labels and fail fast if the
-        # structure is unexpected. This prevents size mismatches between the
-        # dataset and the model output layer.
-        if self.labels.shape[1] != 29:
-            raise ValueError(
-                f"Expected 29 columns (ID + 28 labels), but found {self.labels.shape[1]} in {csv_file}"
-            )
+        # Ensure that all expected columns are present
+        missing = set(self.disease_cols + ["ID"]) - set(df.columns)
+        if missing:
+            raise ValueError(f"Missing expected columns {missing} in {csv_file}")
 
-        # Retain only the first 29 columns in case extra data is present
-        self.labels = self.labels.iloc[:, :29]
+        # Keep only ID and disease columns, discarding metadata and symptom columns
+        self.labels = df[["ID"] + self.disease_cols].copy()
+
+        # Convert disease labels to float32 for the model
+        self.labels[self.disease_cols] = self.labels[self.disease_cols].astype("float32")
+
+        # Print sanity check on the resulting label tensor shape
+        print(f"Loaded labels with shape {self.labels[self.disease_cols].shape}")
 
         self.img_dir = img_dir
         self.transform = transform
@@ -36,10 +52,10 @@ class RFMiDDataset(Dataset):
         # contains numeric values.
         img_name = os.path.join(self.img_dir, str(self.labels.iloc[idx, 0]) + ".png")
         image = Image.open(img_name).convert('RGB')
-        # Extract exactly the 28 label values corresponding to the image
-        label = torch.tensor(
-            self.labels.iloc[idx, 1:29].values.astype('float32')
-        )
+
+        # Extract the seven disease labels for this image
+        label_values = self.labels.loc[idx, self.disease_cols].values
+        label = torch.tensor(label_values, dtype=torch.float32)
         if self.transform:
             image = self.transform(image)
         return image, label
@@ -127,7 +143,7 @@ def main():
 
     # Model
     model = models.efficientnet_b0(pretrained=True)
-    model.classifier[1] = nn.Linear(model.classifier[1].in_features, 28)
+    model.classifier[1] = nn.Linear(model.classifier[1].in_features, 7)
     model = model.to(device)
 
     criterion = nn.BCEWithLogitsLoss()
