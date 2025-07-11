@@ -131,15 +131,21 @@ def evaluate_model(loader, model, device, save_path="/content/drive/MyDrive/resu
         auc_macro = "N/A"
 
     # Display the evaluation metrics without emojis to avoid encoding issues
-    print("Classification Report:\n", report)
+    try:
+        print("Classification Report:\n", report)
+    except UnicodeEncodeError:
+        # Fall back to printing a safely encoded version
+        safe_report = report.encode("utf-8", errors="ignore").decode("utf-8")
+        print("Classification Report:\n", safe_report)
     print(f"Accuracy: {acc:.4f}")
     print(f"F1 Macro: {f1_macro:.4f}")
     print(f"F1 Micro: {f1_micro:.4f}")
     print(f"Macro AUC: {auc_macro}")
 
-    with open(save_path, "w") as f:
+    safe_report = report.encode("utf-8", errors="ignore").decode("utf-8")
+    with open(save_path, "w", encoding="utf-8") as f:
         f.write("=== EfficientNet Evaluation Report ===\n\n")
-        f.write(report + "\n")
+        f.write(safe_report + "\n")
         f.write(f"Accuracy: {acc:.4f}\n")
         f.write(f"F1 Macro: {f1_macro:.4f}\n")
         f.write(f"F1 Micro: {f1_micro:.4f}\n")
