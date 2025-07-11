@@ -21,7 +21,7 @@ class RFMiDDataset(Dataset):
         # Ensure image names read from the CSV are converted to strings when
         # constructing the image path. This avoids type errors if the ID column
         # contains numeric values.
-        img_name = os.path.join(self.img_dir, str(self.labels.iloc[idx, 0]))
+        img_name = os.path.join(self.img_dir, str(self.labels.iloc[idx, 0]) + ".png")
         image = Image.open(img_name).convert('RGB')
         label = torch.tensor(self.labels.iloc[idx, 1:].values.astype('float32'))
         if self.transform:
