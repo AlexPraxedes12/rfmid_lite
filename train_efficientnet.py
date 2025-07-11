@@ -226,7 +226,7 @@ def main():
     model = train_model(train_loader, val_loader, model, criterion, optimizer, device, num_epochs=10)
 
     # Test
-    print("\n📊 Testing results:")
+    print("\n Testing results:")
     print(evaluate_model(test_loader, model, device))
 
 if __name__ == "__main__":
