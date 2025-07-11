@@ -10,28 +10,52 @@ import torch.optim as optim
 
 class RFMiDDataset(Dataset):
     def __init__(self, csv_file, img_dir, transform=None):
-        """Dataset that loads only the seven disease labels from the RFMiD CSV."""
+        """Dataset loader for the RFMiD CSV using 28 abbreviated disease labels."""
 
-        # Columns that correspond to the disease labels we care about
+        # Columns that correspond to the disease labels to predict
         self.disease_cols = [
-            "Diabetic Retinopathy",
-            "Hypertensive Retinopathy",
-            "Glaucoma",
-            "Cataract",
-            "Age-related Macular Degeneration",
-            "Retinal Detachment",
-            "Others",
+            "DR",
+            "ARMD",
+            "MH",
+            "DN",
+            "MYA",
+            "BRVO",
+            "TSLN",
+            "ERM",
+            "LS",
+            "MS",
+            "CSR",
+            "ODC",
+            "CRVO",
+            "TV",
+            "AH",
+            "ODP",
+            "ODE",
+            "ST",
+            "AION",
+            "PT",
+            "RT",
+            "RS",
+            "CRS",
+            "EDN",
+            "RPEC",
+            "MHL",
+            "RP",
+            "OTHER",
         ]
 
         # Load the label CSV
         df = pd.read_csv(csv_file)
 
+        # Drop the Disease_Risk column if present
+        df = df.drop(columns=["Disease_Risk"], errors="ignore")
+
         # Ensure that all expected columns are present
-        missing = set(self.disease_cols + ["ID"]) - set(df.columns)
+        missing = set(["ID"] + self.disease_cols) - set(df.columns)
         if missing:
             raise ValueError(f"Missing expected columns {missing} in {csv_file}")
 
-        # Keep only ID and disease columns, discarding metadata and symptom columns
+        # Keep only ID and disease columns
         self.labels = df[["ID"] + self.disease_cols].copy()
 
         # Convert disease labels to float32 for the model
@@ -53,7 +77,7 @@ class RFMiDDataset(Dataset):
         img_name = os.path.join(self.img_dir, str(self.labels.iloc[idx, 0]) + ".png")
         image = Image.open(img_name).convert('RGB')
 
-        # Extract the seven disease labels for this image
+        # Extract the disease labels for this image
         label_values = self.labels.loc[idx, self.disease_cols].values
         label = torch.tensor(label_values, dtype=torch.float32)
         if self.transform:
@@ -143,7 +167,7 @@ def main():
 
     # Model
     model = models.efficientnet_b0(pretrained=True)
-    model.classifier[1] = nn.Linear(model.classifier[1].in_features, 7)
+    model.classifier[1] = nn.Linear(model.classifier[1].in_features, len(train_set.disease_cols))
     model = model.to(device)
 
     criterion = nn.BCEWithLogitsLoss()
