@@ -84,12 +84,12 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Paths (ajusta según tu Drive o entorno local)
-    train_dir = "/content/RFMiD/Training_Set/Training"
-    train_csv = "/content/RFMiD/Training_Set/RFMiD_Training_Labels.csv"
-    val_dir = "/content/RFMiD/Evaluation_Set/Validation"
-    val_csv = "/content/RFMiD/Evaluation_Set/RFMiD_Validation_Labels.csv"
-    test_dir = "/content/RFMiD/Test_Set/Test"
-    test_csv = "/content/RFMiD/Test_Set/RFMiD_Testing_Labels.csv"
+    train_dir = "/content/Training_Set/Training"
+    train_csv = "/content/Training_Set/RFMiD_Training_Labels.csv"
+    val_dir = "/content/Evaluation_Set/Validation"
+    val_csv = "/content/Evaluation_Set/RFMiD_Validation_Labels.csv"
+    test_dir = "/content/Test_Set/Test"
+    test_csv = "/content/Test_Set/RFMiD_Testing_Labels.csv"
 
     # Transforms
     transform = transforms.Compose([
