@@ -130,11 +130,12 @@ def evaluate_model(loader, model, device, save_path="/content/drive/MyDrive/resu
     except Exception:
         auc_macro = "N/A"
 
-    print("\ud83d\udccb Classification Report:\n", report)
-    print(f"\u2705 Accuracy: {acc:.4f}")
-    print(f"\u2705 F1 Macro: {f1_macro:.4f}")
-    print(f"\u2705 F1 Micro: {f1_micro:.4f}")
-    print(f"\ud83d\udcc8 Macro AUC: {auc_macro}")
+    # Display the evaluation metrics without emojis to avoid encoding issues
+    print("Classification Report:\n", report)
+    print(f"Accuracy: {acc:.4f}")
+    print(f"F1 Macro: {f1_macro:.4f}")
+    print(f"F1 Micro: {f1_micro:.4f}")
+    print(f"Macro AUC: {auc_macro}")
 
     with open(save_path, "w") as f:
         f.write("=== EfficientNet Evaluation Report ===\n\n")
@@ -144,7 +145,7 @@ def evaluate_model(loader, model, device, save_path="/content/drive/MyDrive/resu
         f.write(f"F1 Micro: {f1_micro:.4f}\n")
         f.write(f"AUC Macro: {auc_macro}\n")
 
-    print(f"\ud83d\udcc1 Results saved to: {save_path}")
+    print(f"Results saved to: {save_path}")
     return acc, f1_macro, f1_micro, report
 
 def train_model(train_loader, val_loader, model, criterion, optimizer, device, num_epochs=5):
@@ -184,7 +185,8 @@ def train_model(train_loader, val_loader, model, criterion, optimizer, device, n
         if val_loss < best_loss:
             best_loss = val_loss
             torch.save(model.state_dict(), "efficientnet_rfmid_best.pth")
-            print("✔️ Saved best model")
+            # Inform the user when the best model is updated without using emojis
+            print("Saved best model")
 
     return model
 
