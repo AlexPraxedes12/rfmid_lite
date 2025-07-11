@@ -4,7 +4,13 @@ import pandas as pd
 from torchvision import transforms, models
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
-from sklearn.metrics import classification_report
+from sklearn.metrics import (
+    classification_report,
+    accuracy_score,
+    f1_score,
+    roc_auc_score,
+)
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
@@ -84,19 +90,62 @@ class RFMiDDataset(Dataset):
             image = self.transform(image)
         return image, label
 
-def evaluate_model(loader, model, device):
+def evaluate_model(loader, model, device, save_path="/content/drive/MyDrive/results_efficientnet.txt"):
+    """Evaluate model on a given loader and return metrics.
+
+    Predictions are obtained by applying a sigmoid activation followed by
+    binarization using a 0.5 threshold. The function prints a classification
+    report and additional metrics, then writes them to ``save_path``.
+    """
+
     model.eval()
     all_labels = []
     all_preds = []
+    all_probs = []
+
     with torch.no_grad():
         for images, labels in loader:
             images = images.to(device)
             labels = labels.to(device)
+
             outputs = model(images)
-            preds = torch.sigmoid(outputs).cpu().numpy()
-            all_labels.extend(labels.cpu().numpy())
+            probs = torch.sigmoid(outputs).cpu().numpy()
+            preds = (probs >= 0.5).astype(int)
+
+            all_probs.extend(probs)
             all_preds.extend(preds)
-    return classification_report(all_labels, all_preds, zero_division=0, output_dict=False)
+            all_labels.extend(labels.cpu().numpy())
+
+    y_true = np.array(all_labels)
+    y_pred = np.array(all_preds)
+    y_prob = np.array(all_probs)
+
+    report = classification_report(y_true, y_pred, zero_division=0)
+    acc = accuracy_score(y_true, y_pred)
+    f1_macro = f1_score(y_true, y_pred, average="macro", zero_division=0)
+    f1_micro = f1_score(y_true, y_pred, average="micro", zero_division=0)
+
+    try:
+        auc_macro = roc_auc_score(y_true, y_prob, average="macro")
+    except Exception:
+        auc_macro = "N/A"
+
+    print("\ud83d\udccb Classification Report:\n", report)
+    print(f"\u2705 Accuracy: {acc:.4f}")
+    print(f"\u2705 F1 Macro: {f1_macro:.4f}")
+    print(f"\u2705 F1 Micro: {f1_micro:.4f}")
+    print(f"\ud83d\udcc8 Macro AUC: {auc_macro}")
+
+    with open(save_path, "w") as f:
+        f.write("=== EfficientNet Evaluation Report ===\n\n")
+        f.write(report + "\n")
+        f.write(f"Accuracy: {acc:.4f}\n")
+        f.write(f"F1 Macro: {f1_macro:.4f}\n")
+        f.write(f"F1 Micro: {f1_micro:.4f}\n")
+        f.write(f"AUC Macro: {auc_macro}\n")
+
+    print(f"\ud83d\udcc1 Results saved to: {save_path}")
+    return acc, f1_macro, f1_micro, report
 
 def train_model(train_loader, val_loader, model, criterion, optimizer, device, num_epochs=5):
     model.train()
