@@ -48,6 +48,7 @@ class RFMiDDataset(Dataset):
             "MHL",
             "RP",
             "OTHER",
+            "Normal"
         ]
 
         # Load the label CSV
